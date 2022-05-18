@@ -1,5 +1,5 @@
 <?php
     define('DB_Name', 'webdoan');
-    define('DB_User', 'webdoan');
-    define('DB_Pass', 'doan12345678'); 
+    define('DB_User', 'root');
+    define('DB_Pass', ''); 
 ?>

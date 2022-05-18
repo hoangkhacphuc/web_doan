@@ -99,7 +99,7 @@
 
         echo json_encode(array(
             'status' => true,
-            'message' => 'Đăng ký tài khoản thành công. Vui lòng kiểm tra Email để lấy thông tin tài khoản và mật khẩu',
+            'message' => 'Đăng ký tài khoản thành công',
             'data' => ''
         ));
         return;
@@ -139,7 +139,7 @@
             return;
         }
 
-        $result = db_select('account', "`user` = '". $_POST['user'] . "' AND `pass` = " . md5($_POST['pass']));
+        $result = db_select('account', "`user` = '". $_POST['user'] . "' AND `pass` = '" . md5($_POST['pass']) . "'");
 
         if (count($result) == 0)
         {
@@ -353,7 +353,7 @@
         }
 
 
-        $user_id = db_select('account', "`user` = $user")[0]['id'];
+        $user_id = db_select('account', "`user` = '$user'")[0]['id'];
 
         $post = db_select('participate', "`account_id` = '$user_id' AND `post_id` = '$id'");
         if (count($post) > 0)
@@ -423,7 +423,7 @@
             return;
         }
 
-        $user_id = db_select('account', "`user` = $user")[0]['id'];
+        $user_id = db_select('account', "`user` = '$user'")[0]['id'];
 
         $post = db_select('participate', "`account_id` = '$user_id' AND `post_id` = '$id'");
         if (count($post) == 0)
@@ -436,7 +436,7 @@
             return;
         }
 
-        db_delete('participate', "`id` = $post[0]['id']");
+        db_delete('participate', "`id` = '$post[0]['id']'");
 
         echo json_encode(array(
             'status' => true,
@@ -635,7 +635,7 @@
         }
         $user = $_SESSION['user'];
 
-        $user_type = db_select('account', "`user` = $user")[0]['user_type'];
+        $user_type = db_select('account', "`user` = '$user'")[0]['user_type'];
         if ($user_type == 1)
             return true;
         return false;
