@@ -443,6 +443,202 @@
         ));
     }
 
+    function API_GetListAccount()
+    {
+        if (!isLogin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Vui lòng đăng nhập và thực hiện lại',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isAdmin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có quyền truy cập',
+                'data' => ''
+            ));
+            return;
+        }
+        $user = $_SESSION['user'];
+        $list = db_select('account', "`user` != '$user'");
+        echo json_encode(array(
+            'status' => true,
+            'message' => 'Lấy danh sách đoàn viên thành công',
+            'data' => $list
+        ));
+    }
+
+    function API_UpdateInformation()
+    {
+        if (!isLogin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Vui lòng đăng nhập và thực hiện lại',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isAdmin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có quyền truy cập',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isset($_POST['id']))
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có ID Đoàn viên',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isset($_POST['full_name']) &&
+            !isset($_POST['email']) &&
+            !isset($_POST['birthday']) &&
+            !isset($_POST['gender']) &&
+            !isset($_POST['address']) &&
+            !isset($_POST['user_type']) )
+            {
+                echo json_encode(array(
+                    'status' => false,
+                    'message' => 'Chưa có thông tin cập nhật',
+                    'data' => ''
+                ));
+                return;
+            }
+            $data = array();
+            if (isset($_POST['full_name']))
+            {
+                $data = array_merge($data, array(
+                    'full_name' => $_POST['full_name']
+                ));
+            }
+            if (isset($_POST['email']))
+            {
+                $data = array_merge($data, array(
+                    'email' => $_POST['email']
+                ));
+            }
+            if (isset($_POST['birthday']))
+            {
+                $data = array_merge($data, array(
+                    'birthday' => $_POST['birthday']
+                ));
+            }
+            if (isset($_POST['gender']))
+            {
+                $data = array_merge($data, array(
+                    'gender' => $_POST['gender']
+                ));
+            }
+            if (isset($_POST['address']))
+            {
+                $data = array_merge($data, array(
+                    'address' => $_POST['address']
+                ));
+            }
+            if (isset($_POST['user_type']))
+            {
+                $data = array_merge($data, array(
+                    'user_type' => $_POST['user_type']
+                ));
+            }
+            $id = $_POST['id'];
+            $post = db_select('account', "`id` = '$id'");
+            if (count($post) == 0)
+            {
+                echo json_encode(array(
+                    'status' => false,
+                    'message' => 'Không tìm thấy Đoàn viên',
+                    'data' => ''
+                ));
+                return;
+            }
+            $result = db_update('account', $data, "`id` = '$id'");
+            echo json_encode(array(
+                'status' => true,
+                'message' => 'Cập nhật thông tin thành công',
+                'data' => ''
+            ));
+            return;
+    }
+
+    function API_DeleteAccount()
+    {
+        if (!isLogin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Vui lòng đăng nhập và thực hiện lại',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isAdmin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có quyền truy cập',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isset($_POST['id']))
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có ID Đoàn viên',
+                'data' => ''
+            ));
+            return;
+        }
+        
+        $id = $_POST['id'];
+
+        $id = $_POST['id'];
+        $result = db_select('account', "`id` = '$id'");
+        if (count($result) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không tìm thấy Đoàn viên',
+                'data' => ''
+            ));
+            return;
+        }
+
+        $result = db_delete('account', "`id` = '$id'");
+        echo json_encode(array(
+            'status' => true,
+            'message' => 'Xóa tài khoản Đoàn viên thành công',
+            'data' => ''
+        ));
+        return;
+    }
+
+    function isAdmin() :bool
+    {
+        if (!isLogin())
+        {
+            return false;
+        }
+        $user = $_SESSION['user'];
+
+        $user_type = db_select('account', "`user` = $user")[0]['user_type'];
+        if ($user_type == 1)
+            return true;
+        return false;
+    }
+
     function API_Logout()
     {
         session_unset();
