@@ -1,4 +1,6 @@
 <?php
+    header('Access-Control-Allow-Origin: *');
+    header('Content-type: application/json');
     session_start();
     include ('./config.php');
     include ('./DB.php');
@@ -78,7 +80,7 @@
         $pass = md5($_POST['pass']);
         $full_name = $_POST['full_name'];
 
-        $result = db_select('account', "`user` = $user");
+        $result = db_select('account', "`user` = '$user'");
         if (count($result )> 0)
         {
             echo json_encode(array(
