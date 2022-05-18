@@ -7,7 +7,7 @@
     {
         $func = $_GET['API'];
         if(!function_exists('API_' . $func)){
-            require_once ('./404.php');
+            echo "404";
             return;
         }
         call_user_func('API_' . $func);
@@ -175,7 +175,7 @@
         }
         $user = $_SESSION['user'];
 
-        $result = db_select('account', "`user` = $user");
+        $result = db_select('account', "`user` = '$user'");
         if (count($result) == 0)
         {
             echo json_encode(array(
@@ -205,7 +205,7 @@
 
     function API_GetPosts()
     {
-        $result = db_select('posts', '1');
+        $result = db_select('posts', "`be_attended` = '0'");
         if (count($result) == 0)
         {
             echo json_encode(array(
@@ -215,10 +215,242 @@
             ));
             return;
         }
+        $data = array();
+        foreach ($result as $item) {
+            $temp = array(
+                'id' => $item['id'],
+                'title' => $item['title'],
+            );
+            array_push($data, $temp);
+        }
+
         echo json_encode(array(
-            'status' => false,
+            'status' => true,
             'message' => 'Đã tìm thấy thông tin bài viết',
-            'data' => $result
+            'data' => $data
         ));
+    }
+
+    function API_GetEvents()
+    {
+        $result = db_select('posts', "`be_attended` = '1'");
+        if (count($result) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Chưa có sự kiện nào',
+                'data' => ''
+            ));
+            return;
+        }
+        $data = array();
+        foreach ($result as $item) {
+            $temp = array(
+                'id' => $item['id'],
+                'title' => $item['title'],
+                'deadline' => $item['deadline']
+            );
+            array_push($data, $temp);
+        }
+
+        echo json_encode(array(
+            'status' => true,
+            'message' => 'Đã tìm thấy thông tin sự kiện',
+            'data' => $data
+        ));
+    }
+
+    function API_GetPostsDetail()
+    {
+        if (!isset($_GET['id']))
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có ID bài viết',
+                'data' => ''
+            ));
+            return;
+        }
+        $id = $_GET['id'];
+        $post = db_select_query("SELECT p.id, p.title, p.content, p.be_attended, p.deadline, p.date_created, a.full_name
+        FROM account as a, posts as p
+        WHERE p.account_id = a.id AND p.id = '$id'");
+
+        if (count($post) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không tìm thấy bài viết',
+                'data' => ''
+            ));
+            return;
+        }
+
+        echo json_encode(array(
+            'status' => true,
+            'message' => 'Đã tìm thấy bài viết',
+            'data' => $post[0]
+        ));
+    }
+
+    function API_Subscribe()
+    {
+        if (!isLogin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Vui lòng đăng nhập và thực hiện lại',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isset($_GET['id']))
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có ID bài viết',
+                'data' => ''
+            ));
+            return;
+        }
+        $id = $_GET['id'];
+        $user = $_SESSION['user'];
+        $date_current = date('Y-m-d');
+        
+        $post = db_select('posts', "`id` = '$id'");
+        if (count($post) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không tìm thấy bài viết',
+                'data' => ''
+            ));
+            return;
+        }
+
+        $post = db_select('posts', "`id` = '$id' AND `be_attended` = '1'");
+        if (count($post) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không thể đăng ký vì bài viết này không phải sự kiện',
+                'data' => ''
+            ));
+            return;
+        }
+
+        $post = db_select('posts', "`id` = '$id' AND `be_attended` = '1' AND `deadline` >= '$date_current'");
+        if (count($post) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không thể đăng ký vì quá thời gian đăng ký',
+                'data' => ''
+            ));
+            return;
+        }
+
+
+        $user_id = db_select('account', "`user` = $user")[0]['id'];
+
+        $post = db_select('participate', "`account_id` = '$user_id' AND `post_id` = '$id'");
+        if (count($post) > 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Đã đăng ký từ trước',
+                'data' => ''
+            ));
+            return;
+        }
+
+        db_insert('participate', array(
+            'account_id' => $user_id,
+            'post_id' => $id
+        ));
+
+        echo json_encode(array(
+            'status' => true,
+            'message' => 'Đăng ký tham gia sự kiện thành công',
+            'data' => ''
+        ));
+    }
+
+    function API_Unsubscribe()
+    {
+        if (!isLogin())
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Vui lòng đăng nhập và thực hiện lại',
+                'data' => ''
+            ));
+            return;
+        }
+        if (!isset($_GET['id']))
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không có ID bài viết',
+                'data' => ''
+            ));
+            return;
+        }
+        $id = $_GET['id'];
+        $user = $_SESSION['user'];
+        
+        $post = db_select('posts', "`id` = '$id'");
+        if (count($post) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không tìm thấy bài viết',
+                'data' => ''
+            ));
+            return;
+        }
+
+        $post = db_select('posts', "`id` = '$id' AND `be_attended` = '1'");
+        if (count($post) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không thể hủy vì bài viết này không phải sự kiện',
+                'data' => ''
+            ));
+            return;
+        }
+
+        $user_id = db_select('account', "`user` = $user")[0]['id'];
+
+        $post = db_select('participate', "`account_id` = '$user_id' AND `post_id` = '$id'");
+        if (count($post) == 0)
+        {
+            echo json_encode(array(
+                'status' => false,
+                'message' => 'Không thể hủy vì chưa đăng ký sự kiện này',
+                'data' => ''
+            ));
+            return;
+        }
+
+        db_delete('participate', "`id` = $post[0]['id']");
+
+        echo json_encode(array(
+            'status' => true,
+            'message' => 'Đăng ký tham gia sự kiện thành công',
+            'data' => ''
+        ));
+    }
+
+    function API_Logout()
+    {
+        session_unset();
+        session_destroy();
+        $response = array(
+            'status' => true,
+            'message' => 'Đã đăng xuất tài khoản',
+            'data' => ''
+        );
     }
 ?>
