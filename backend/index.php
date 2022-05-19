@@ -1,5 +1,8 @@
 <?php
     header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods:', 'GET, POST');
+    header('Access-Control-Allow-Headers:', 'X-Requested-With, content-type');
+    header('Access-Control-Allow-Credentials:', true);
     header('Content-type: application/json');
     session_start();
     include ('./config.php');
